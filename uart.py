@@ -1,0 +1,58 @@
+import serial.tools.list_ports
+
+
+def getPort():
+    ports = serial.tools.list_ports.comports()
+    N = len(ports)
+    commPort = "None"
+    for i in range(0, N):
+        port = ports[i]
+        print(port)
+        strPort = str(port)
+        if "usbserial-0001" in strPort: #tùy theo tên port trên PC
+            splitPort = strPort.split(" ")
+            commPort = (splitPort[0])
+    return commPort
+
+portName = getPort()
+
+if portName != "None":
+    global ser
+    ser = serial.Serial(port=portName, baudrate = 115200)
+    print(ser)
+
+
+def processData(client, data):
+    data = data.replace("!", "")
+    data = data.replace("#", "")
+    splitData = data.split(":")
+    print(splitData)
+    if splitData[1] == "RT":
+        client.publish("cambien1", splitData[2])
+    if splitData[1] == "RH":
+        client.publish("cambien2", splitData[2])
+    if splitData[1] == "LUX":
+        client.publish("cambien3", splitData[2])
+    return 1
+
+mess = ""
+
+
+def readSerial(client):
+    bytesToRead = ser.inWaiting()
+    if (bytesToRead > 0):
+        global mess
+        mess = mess + ser.read(bytesToRead).decode("UTF-8")
+        while ("#" in mess) and ("!" in mess):
+            start = mess.find("!")
+            end = mess.find("#")
+            processData(client, mess[start:end + 1])
+            if end == len(mess):
+                mess = ""
+            else:
+                mess = mess[end + 1:]
+
+
+def writeData(data):
+    ser.write(str(data).encode())
+    # ser.write((str(data) + "#").encode())

@@ -1,0 +1,6 @@
+adafruit-io
+keras
+tensorflow
+Pillow
+numpy
+opencv-python
